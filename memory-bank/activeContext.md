@@ -3,8 +3,8 @@
 지금 상태만 적는다. 끝난 일은 지우고, 오래 남길 내용은 `progress.md`나 `systemPatterns.md`로 옮긴다.
 
 ## 김도현 (server)
-- 지금: AI 협업 환경 추가 (`memory-bank/`, `AGENTS.md`, `scripts/ai_verify.py`)
-- 다음: (적기)
+- 지금: AI 협업 환경 추가 (`memory-bank/`, `AGENTS.md`, `scripts/ai_verify.py`), 계획서 3차본을 memory-bank에 반영
+- 다음: 계획서에 있는데 서버에 없는 것 (`progress.md` "서버" 항목): 중복 요청 방지, 기억 후보·검증 결과 기록, 클라우드 배포
 - 막힌 것: 없음
 - 최근 업데이트: 2026-11-26
 

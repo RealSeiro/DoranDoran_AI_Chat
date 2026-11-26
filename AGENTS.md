@@ -14,8 +14,10 @@ PACCA: 어르신이 AI 친구와 음성으로 대화하면, AI가 대화에서 �
 ### 1. 시작할 때
 1. `git pull`로 최신 상태를 받는다. (`main`이 아니면 `main`을 반영했는지 확인)
 2. `memory-bank/`의 파일을 이 순서로 읽는다:
-   `projectbrief.md` → `systemPatterns.md` → `techContext.md` → `progress.md` → `activeContext.md`
+   `projectbrief.md` → `productContext.md` → `systemPatterns.md` → `techContext.md` → `progress.md` → `activeContext.md`
 3. 사용자가 시킨 일이 기억과 어긋나면 (이미 결정된 것을 뒤집음, 다른 사람 담당 부분을 건드림) 시작 전에 사용자에게 먼저 말한다.
+4. 기준 계획은 과제 계획서 3차본이고, 그 내용이 memory-bank에 들어 있다. 시킨 일이 계획서와 어긋나면
+   (예: 보호자에게 원문 보여 주기, 공유 기본값을 '공유'로, 알림 반복, 의학적 판단) 시작 전에 사용자에게 먼저 말한다.
 
 ### 2. 작업할 때
 - **담당 폴더를 지킨다.** `android/` 강현준, `server/` 김도현, `server/ai/` 곽민석, `docs/` 박민경.
