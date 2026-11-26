@@ -31,16 +31,13 @@
 
 ## AI(Claude Code·Codex)와 함께 작업하기
 
-AI가 지켜야 할 작업 방식은 `AGENTS.md`에 있고, AI가 알아서 읽습니다. 팀원은 아래만 알면 됩니다.
+방향은 각자 정하고, AI에게 하던 대로 일을 시키면 됩니다. AI는 `AGENTS.md`를 읽고 두 가지만 합니다.
 
-1. 시작 전에 `git pull` 하고, **이름부터 말한 뒤** 하고 싶은 일을 말합니다. 예: "나 강현준이야. 대화 화면 만들자"
-   - 이름을 안 말하면 AI가 먼저 묻습니다. 한 번 말하면 그 컴퓨터에 기억돼서(`.claude/.whoami`, git에 안 올라감) 다음부터는 확인만 합니다.
-   - AI는 `memory-bank/`(프로젝트 기억)를 읽고, 내 칸(지금 하는 일·다음 할 일)과 다른 사람이 나에게 넘긴 일(`→ 내 이름`)을 먼저 알려 줍니다.
-   - 내 담당 폴더 밖을 고쳐야 하면 AI가 먼저 물어봅니다. 브랜치는 `hyunjun/기능이름`처럼 이름 접두어를 붙입니다.
-2. AI는 끝내기 전에 `python scripts/ai_verify.py`로 스스로 검증합니다. Claude Code는 끝낼 때 자동으로 한 번 더 검사하고, 실패하면 스스로 고칩니다. 코드를 바꿨는데 내 칸 기억을 안 고쳤으면 한 번 더 막고 업데이트하게 합니다.
-   - 서버 검사를 제대로 하려면 `server/.venv`에 패키지를 설치해 두고(`server/README.md`), DB를 켜 두세요(`docker compose up -d`). DB가 꺼져 있으면 시연 검사(`demo.py`)는 건너뜁니다.
+1. **기억**: 시작할 때 `memory-bank/`를 읽어 앞사람이 한 일을 이어받고, 끝날 때 내 칸(`activeContext.md`)에 지금 상태를 **반드시** 남깁니다. 코드를 바꾸고 기억을 안 남기면 Claude Code가 끝나지 않습니다. 이것까지 같이 커밋해서 PR로 올려 주세요.
+2. **검증**: 끝내기 전에 `python scripts/ai_verify.py`로 코드가 돌아가는지 확인합니다. Claude Code는 끝낼 때 자동으로 검사하고, 실패하면 끝나지 않고 고칩니다.
+   - 서버 검사를 제대로 하려면 `server/.venv`에 패키지를 설치하고(`server/README.md`), DB를 켜 두세요(`docker compose up -d`). DB가 꺼져 있으면 `demo.py`는 건너뜁니다.
    - 훅은 `python` 명령으로 실행됩니다. Mac에서 `python`이 없으면 가상환경을 켠 뒤 Claude Code를 실행하세요.
-3. AI가 `memory-bank/`의 **자기 칸**을 업데이트한 것까지 같이 커밋해서 PR로 올립니다. 그래야 다음 사람의 AI가 이어받습니다.
+   - Codex는 자동 검사가 없으니, 끝나기 전에 AI가 직접 돌리는지 봐 주세요.
 
 | 파일 | 내용 |
 |---|---|
@@ -49,4 +46,4 @@ AI가 지켜야 할 작업 방식은 `AGENTS.md`에 있고, AI가 알아서 읽�
 | `memory-bank/systemPatterns.md` | 구조, 설계 원칙, 데이터 흐름·보관, 서버 예외 처리, **결정 기록** |
 | `memory-bank/techContext.md` | 기술 스택, 설정값, 검증 도구 |
 | `memory-bank/progress.md` | 되는 것, 남은 것, 알려진 문제 |
-| `memory-bank/activeContext.md` | 사람별 지금 하는 일 (자기 칸만 고침) |
+| `memory-bank/activeContext.md` | 사람별 지금 상태 |

@@ -12,8 +12,8 @@ Claude Code가 부를 때: python scripts/ai_verify.py --hook   (.claude/setting
 
 --hook 모드: 실패하면 exit 2 → Claude Code가 끝내지 못하고 실패 내용을 보고 고친다.
              같은 세션에서 3번 연속 실패하면 멈추고 사람에게 넘긴다 (무한 반복 방지).
-             검사를 통과해도, 코드는 바꿨는데 memory-bank/activeContext.md를 안 고쳤으면
-             한 번만 막고 작업자(.claude/.whoami) 칸을 업데이트하라고 알린다.
+             검사를 통과해도, 코드·문서를 바꿨는데 memory-bank/activeContext.md를 안 고쳤으면
+             같은 방식으로 막는다 (기억도 반드시 남긴다).
 표준 라이브러리만 쓴다 (가상환경이 꺼져 있어도 이 파일은 돈다).
 """
 import json
@@ -27,9 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SERVER = ROOT / "server"
 ANDROID = ROOT / "android"
 STATE = ROOT / ".claude" / ".verify-state.json"
-WHOAMI = ROOT / ".claude" / ".whoami"
-NOT_CODE = ("memory-bank/", ".claude/")       # 이것만 바뀌었으면 기억 업데이트를 요구하지 않음
 MAX_TRIES = 3
+NOT_WORK = ("memory-bank/", ".claude/")       # 이것만 바뀌었으면 기억을 요구하지 않음
 TAIL = 60  # 실패했을 때 보여 줄 마지막 줄 수
 
 if hasattr(sys.stdout, "reconfigure"):          # Windows 콘솔에서 한글·기호 깨짐 방지
@@ -104,15 +103,8 @@ def check_android(results, notes):
 
 def memory_missing(changed):
     """코드·문서는 바뀌었는데 activeContext.md는 그대로인가"""
-    work = [f for f in changed if not f.startswith(NOT_CODE)]
+    work = [f for f in changed if not f.startswith(NOT_WORK)]
     return bool(work) and "memory-bank/activeContext.md" not in changed
-
-
-def whoami():
-    try:
-        return WHOAMI.read_text(encoding="utf-8").strip()
-    except OSError:
-        return ""
 
 
 def run(all_areas, changed=None):
@@ -175,20 +167,16 @@ def hook_mode():
     state = load_state()
     failed = [r for r in results if r[1] != 0]
 
+    if not failed and memory_missing(changed):
+        failed = [("기억 남기기 (memory-bank/activeContext.md)", 1,
+                   "코드·문서를 바꿨는데 memory-bank/activeContext.md가 그대로입니다.\n"
+                   "AGENTS.md '마지막으로: 기억 남기기'대로, 일한 사람의 칸에 지금 하는 일·다음에 하려는 일·막힌 것을 적으세요 "
+                   "(누구인지 모르면 사용자에게 물어볼 것. 다음 할 일은 AI가 정하지 말고 사용자가 정한 것을 적을 것).\n"
+                   "구조나 약속을 바꿨으면 systemPatterns.md 결정 기록, 새로 된 것·남은 일이 있으면 progress.md도.")]
+        results = results + failed
+
     if not failed:
         state.pop(sid, None)
-        mem_key = f"memory:{sid}"
-        if memory_missing(changed) and not state.get(mem_key):
-            state[mem_key] = True                    # 기억 업데이트 요구는 세션당 한 번만
-            save_state(state)
-            who = whoami()
-            target = f"'## {who}' 칸" if who else "작업한 사람의 칸 (누구인지 모르면 사용자에게 먼저 물어볼 것)"
-            print("검증은 통과했지만, 코드·문서를 바꿨는데 memory-bank/activeContext.md가 그대로입니다.\n"
-                  f"끝내기 전에 AGENTS.md '4. 마지막으로: 기억 업데이트'를 따라 {target}을 고치세요. "
-                  "필요하면 progress.md와 systemPatterns.md 결정 기록도.\n"
-                  "정말 남길 내용이 없는 작은 수정이면, 사용자에게 그렇다고 말하고 그대로 끝내도 됩니다 (다시 막지 않음).",
-                  file=sys.stderr)
-            sys.exit(2)
         save_state(state)
         if ran and (results or notes):
             print(json.dumps({"systemMessage": "자동 검증\n" + report(results, notes)}, ensure_ascii=False))
@@ -205,7 +193,7 @@ def hook_mode():
         sys.exit(0)
 
     print(f"자동 검증 실패 ({tries}/{MAX_TRIES}). 아직 작업을 끝내지 말고 원인을 고친 뒤 다시 끝내세요.\n"
-          "- 검사(테스트·demo.py·check_ai.py)를 고쳐서 통과시키지 말고, 코드를 고치세요.\n"
+          "- 검사(테스트·demo.py·check_ai.py)를 고쳐서 통과시키지 말고, 코드를 고치세요. 기억이 빠졌으면 기억을 남기세요.\n"
           "- 검사 자체가 틀렸다고 판단되면 고치지 말고 사용자에게 이유를 설명하세요.\n\n"
           + report(results, notes) + "\n\n" + failures_text(results), file=sys.stderr)
     sys.exit(2)
@@ -214,7 +202,12 @@ def hook_mode():
 def main():
     if "--hook" in sys.argv:
         hook_mode()
-    results, notes, ran = run(all_areas="--all" in sys.argv)
+    all_areas = "--all" in sys.argv
+    changed = None if all_areas else git_changed()
+    results, notes, ran = run(all_areas, changed)
+    if changed and memory_missing(changed):
+        results.append(("기억 남기기 (memory-bank/activeContext.md)", 1,
+                         "코드·문서를 바꿨는데 memory-bank/activeContext.md가 그대로입니다. 일한 사람의 칸을 업데이트하세요."))
     if not ran:
         print("바뀐 파일이 없어 검사할 것이 없음 (전부 검사: --all)")
         sys.exit(0)

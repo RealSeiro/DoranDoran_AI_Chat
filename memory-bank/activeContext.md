@@ -1,11 +1,11 @@
-# activeContext — 지금 하는 일 (사람별 칸. 자기 칸만 고치기)
+# activeContext — 사람별 지금 상태
 
 지금 상태만 적는다. 끝난 일은 지우고, 오래 남길 내용은 `progress.md`나 `systemPatterns.md`로 옮긴다.
-다른 사람에게 넘길 일은 자기 칸 "막힌 것·넘길 것"에 `→ 이름: 내용`으로 적는다. 시작할 때 다른 칸에서 `→ 내 이름`을 찾아본다.
+다른 사람에게 전할 게 있으면 자기 칸에 `→ 이름: 내용`으로 적어 둔다.
 
 ## 김도현 (server)
-- 지금: AI 협업 환경 추가 (`memory-bank/`, `AGENTS.md`, `scripts/ai_verify.py`, 이름 밝히고 시작하기), 계획서 3차본을 memory-bank에 반영 → PR #2
-- 다음: 계획서에 있는데 서버에 없는 것 (`progress.md` "서버" 항목): 중복 요청 방지, 기억 후보·검증 결과 기록, 클라우드 배포
+- 지금: AI 협업 환경 추가 (`memory-bank/` 기억 + `scripts/ai_verify.py` 검증), 계획서 3차본을 memory-bank에 반영 → PR #2
+- 다음: (적기)
 - 막힌 것·넘길 것: 없음
 - 최근 업데이트: 2026-11-26
 
