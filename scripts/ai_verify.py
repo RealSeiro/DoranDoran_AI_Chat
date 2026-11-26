@@ -12,6 +12,8 @@ Claude Code가 부를 때: python scripts/ai_verify.py --hook   (.claude/setting
 
 --hook 모드: 실패하면 exit 2 → Claude Code가 끝내지 못하고 실패 내용을 보고 고친다.
              같은 세션에서 3번 연속 실패하면 멈추고 사람에게 넘긴다 (무한 반복 방지).
+             검사를 통과해도, 코드는 바꿨는데 memory-bank/activeContext.md를 안 고쳤으면
+             한 번만 막고 작업자(.claude/.whoami) 칸을 업데이트하라고 알린다.
 표준 라이브러리만 쓴다 (가상환경이 꺼져 있어도 이 파일은 돈다).
 """
 import json
@@ -25,6 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SERVER = ROOT / "server"
 ANDROID = ROOT / "android"
 STATE = ROOT / ".claude" / ".verify-state.json"
+WHOAMI = ROOT / ".claude" / ".whoami"
+NOT_CODE = ("memory-bank/", ".claude/")       # 이것만 바뀌었으면 기억 업데이트를 요구하지 않음
 MAX_TRIES = 3
 TAIL = 60  # 실패했을 때 보여 줄 마지막 줄 수
 
@@ -51,9 +55,11 @@ def git_changed():
     code, out = sh(["git", "status", "--porcelain"], ROOT, 30)
     if code == 0:
         files |= {line[3:].strip().strip('"').split(" -> ")[-1] for line in out.splitlines() if line.strip()}
-    code, out = sh(["git", "diff", "--name-only", "@{u}...HEAD"], ROOT, 30)
-    if code == 0:
-        files |= {line.strip() for line in out.splitlines() if line.strip()}
+    for base in ("@{u}", "origin/main"):        # 아직 push 안 한 브랜치면 main과 비교
+        code, out = sh(["git", "diff", "--name-only", f"{base}...HEAD"], ROOT, 30)
+        if code == 0:
+            files |= {line.strip() for line in out.splitlines() if line.strip()}
+            break
     return files
 
 
@@ -96,8 +102,22 @@ def check_android(results, notes):
     results.append(("android 빌드 (assembleDebug)", *sh([str(gradlew), "assembleDebug", "-q"], ANDROID, 900)))
 
 
-def run(all_areas):
-    changed = None if all_areas else git_changed()
+def memory_missing(changed):
+    """코드·문서는 바뀌었는데 activeContext.md는 그대로인가"""
+    work = [f for f in changed if not f.startswith(NOT_CODE)]
+    return bool(work) and "memory-bank/activeContext.md" not in changed
+
+
+def whoami():
+    try:
+        return WHOAMI.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def run(all_areas, changed=None):
+    if changed is None and not all_areas:
+        changed = git_changed()
     touched = lambda area: changed is None or any(f.startswith(area + "/") for f in changed)  # noqa: E731
     results, notes = [], []
     if changed is not None and not changed:
@@ -150,12 +170,25 @@ def hook_mode():
     except ValueError:
         data = {}
     sid = data.get("session_id", "unknown")
-    results, notes, ran = run(all_areas=False)
+    changed = git_changed()
+    results, notes, ran = run(all_areas=False, changed=changed)
     state = load_state()
     failed = [r for r in results if r[1] != 0]
 
     if not failed:
         state.pop(sid, None)
+        mem_key = f"memory:{sid}"
+        if memory_missing(changed) and not state.get(mem_key):
+            state[mem_key] = True                    # 기억 업데이트 요구는 세션당 한 번만
+            save_state(state)
+            who = whoami()
+            target = f"'## {who}' 칸" if who else "작업한 사람의 칸 (누구인지 모르면 사용자에게 먼저 물어볼 것)"
+            print("검증은 통과했지만, 코드·문서를 바꿨는데 memory-bank/activeContext.md가 그대로입니다.\n"
+                  f"끝내기 전에 AGENTS.md '4. 마지막으로: 기억 업데이트'를 따라 {target}을 고치세요. "
+                  "필요하면 progress.md와 systemPatterns.md 결정 기록도.\n"
+                  "정말 남길 내용이 없는 작은 수정이면, 사용자에게 그렇다고 말하고 그대로 끝내도 됩니다 (다시 막지 않음).",
+                  file=sys.stderr)
+            sys.exit(2)
         save_state(state)
         if ran and (results or notes):
             print(json.dumps({"systemMessage": "자동 검증\n" + report(results, notes)}, ensure_ascii=False))
