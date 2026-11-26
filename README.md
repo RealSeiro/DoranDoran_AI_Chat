@@ -28,3 +28,20 @@
 
 - 비밀번호, API 키, `.env`, Firebase 키 파일은 절대 올리지 않습니다. (`.gitignore`에 등록돼 있음)
 - 다른 사람 폴더를 고쳐야 하면 그 사람에게 먼저 말하고 PR로 올립니다.
+
+## AI(Claude Code·Codex)와 함께 작업하기
+
+AI가 지켜야 할 작업 방식은 `AGENTS.md`에 있고, AI가 알아서 읽습니다. 팀원은 아래만 알면 됩니다.
+
+1. 시작 전에 `git pull` 하고, AI에게 하고 싶은 일을 그냥 말합니다. AI는 `memory-bank/`(프로젝트 기억)를 먼저 읽고 이어서 작업합니다.
+2. AI는 끝내기 전에 `python scripts/ai_verify.py`로 스스로 검증합니다. Claude Code는 끝낼 때 자동으로 한 번 더 검사하고, 실패하면 스스로 고칩니다.
+   - 서버 검사를 제대로 하려면 `server/.venv`에 패키지를 설치해 두고(`server/README.md`), DB를 켜 두세요(`docker compose up -d`). DB가 꺼져 있으면 시연 검사(`demo.py`)는 건너뜁니다.
+   - 훅은 `python` 명령으로 실행됩니다. Mac에서 `python`이 없으면 가상환경을 켠 뒤 Claude Code를 실행하세요.3. AI가 `memory-bank/`의 **자기 칸**을 업데이트한 것까지 같이 커밋해서 PR로 올립니다. 그래야 다음 사람의 AI가 이어받습니다.
+
+| 파일 | 내용 |
+|---|---|
+| `memory-bank/projectbrief.md` | 무엇을, 왜 만드나 · 담당 |
+| `memory-bank/systemPatterns.md` | 구조, 역할 나누기, **결정 기록** |
+| `memory-bank/techContext.md` | 기술 스택, 설정값, 검증 도구 |
+| `memory-bank/progress.md` | 되는 것, 남은 것, 알려진 문제 |
+| `memory-bank/activeContext.md` | 사람별 지금 하는 일 (자기 칸만 고침) |

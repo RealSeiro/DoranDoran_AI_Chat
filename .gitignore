@@ -22,6 +22,10 @@ captures/
 *.keystore
 *.jks
 
+# Claude Code 개인 설정·검증 기록 (공용 설정 .claude/settings.json 은 올림)
+.claude/settings.local.json
+.claude/.verify-state.json
+
 # OS · 에디터
 .DS_Store
 Thumbs.db
